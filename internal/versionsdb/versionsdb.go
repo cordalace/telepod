@@ -41,6 +41,16 @@ func (d *VersionsDB) dbPath() (string, error) {
 	var err error
 
 	if os.Geteuid() == 0 {
+		dir := "/var/lib/telepod"
+		if _, err := os.Stat(dir); err != nil {
+			if os.IsNotExist(err) {
+				if err2 := os.MkdirAll(dir, os.ModePerm); err2 != nil {
+					return "", err2
+				}
+			} else {
+				return "", err
+			}
+		}
 		db = "/var/lib/telepod/db.json"
 	} else {
 		db, err = xdg.StateFile(appName + "/db.json")
