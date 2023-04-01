@@ -12,7 +12,7 @@ import (
 
 const (
 	databaseVersion = 1
-	appName         = "imagenotifier"
+	appName         = "telepod"
 )
 
 var errUnsupported = errors.New("unsupported versions database version")
@@ -41,7 +41,7 @@ func (d *VersionsDB) dbPath() (string, error) {
 	var err error
 
 	if os.Geteuid() == 0 {
-		db = "/var/lib/imagenotifier/db.json"
+		db = "/var/lib/telepod/db.json"
 	} else {
 		db, err = xdg.StateFile(appName + "/db.json")
 		if err != nil {
