@@ -42,6 +42,8 @@ After=network.target
 
 [Service]
 Type=oneshot
+Environment="TELEGRAM_CHAT_ID=-1003920707150"
+Environment="TELEGRAM_BOT_TOKEN=7917343448:906-MIX0YZRc6cHETY5KEmrDBA5fHW4Ye26"
 ExecStart=/usr/local/bin/telepod
 ```
 
