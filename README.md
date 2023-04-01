@@ -6,7 +6,7 @@
 Telepod looks up for running containers and checks if an image has changed since last run.
 If the image has been updated Telepod sends a telegram message.
 
-![Update messages example](https://cordalace.pages.dev/telepod-conversation.png =108x136)
+![Conversation example](https://cordalace.pages.dev/telepod-conversation-small.png "Conversation example")
 
 ## Environment variables
 
