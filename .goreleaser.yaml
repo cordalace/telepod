@@ -30,6 +30,9 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+gitea_urls:
+  api: https://codeberg.org/api/v1
+  download: https://codeberg.org
 
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
