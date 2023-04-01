@@ -15,7 +15,7 @@ import (
 func requireEnv(name string) string {
 	value, ok := os.LookupEnv(name)
 	if !ok {
-		log.Fatalf("environment variable required: %s", name)
+		log.Fatalf("error missing required environment variable: %s", name)
 	}
 
 	return value
