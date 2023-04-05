@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"syscall"
 
 	"codeberg.org/cordalace/telepod/internal/workflow"
 	"github.com/adrg/xdg"
@@ -37,29 +39,36 @@ type containerJSON struct {
 }
 
 func (d *VersionsDB) dbPath() (string, error) {
-	var db string
+	var dbLocation string
 	var err error
 
 	if os.Geteuid() == 0 {
-		dir := "/var/lib/telepod"
-		if _, err := os.Stat(dir); err != nil {
-			if os.IsNotExist(err) {
-				if err2 := os.MkdirAll(dir, os.ModePerm); err2 != nil {
-					return "", err2
-				}
-			} else {
-				return "", err
-			}
-		}
-		db = "/var/lib/telepod/db.json"
-	} else {
-		db, err = xdg.StateFile(appName + "/db.json")
-		if err != nil {
+		if err := d.ensureDir("/var/lib/telepod"); err != nil {
 			return "", err
+		}
+		dbLocation = "/var/lib/telepod/db.json"
+	} else {
+		dbLocation, err = xdg.StateFile(appName + "/db.json")
+		if err != nil {
+			return "", fmt.Errorf("error generating json database location: %w", err)
 		}
 	}
 
-	return db, nil
+	return dbLocation, nil
+}
+
+func (d *VersionsDB) ensureDir(dir string) error {
+	if _, err := os.Stat(dir); err != nil {
+		if os.IsNotExist(err) {
+			if err2 := os.MkdirAll(dir, os.ModePerm); err2 != nil {
+				return fmt.Errorf("error creating json database directory: %w", err2)
+			}
+		} else {
+			return fmt.Errorf("error accessing json database directory: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (d *VersionsDB) Init() error {
@@ -79,11 +88,12 @@ func (d *VersionsDB) Init() error {
 
 			return nil
 		}
-		return err
+
+		return fmt.Errorf("error reading json database file: %w", err)
 	}
 
 	if err := json.Unmarshal(data, &d.cfg); err != nil {
-		return err
+		return fmt.Errorf("error unmarshaling json database: %w", err)
 	}
 
 	if d.cfg.Version == 0 {
@@ -102,7 +112,7 @@ func (d *VersionsDB) Init() error {
 	return nil
 }
 
-func (d *VersionsDB) GetContainer(ctx context.Context, name string) (*workflow.Container, error) {
+func (d *VersionsDB) GetContainer(_ context.Context, name string) (*workflow.Container, error) {
 	container := d.getContainer(name)
 	if container == nil {
 		return nil, workflow.ErrContainerNotFound
@@ -120,7 +130,7 @@ func (d *VersionsDB) getContainer(name string) *containerJSON {
 	return container
 }
 
-func (d *VersionsDB) CreateContainer(ctx context.Context, container *workflow.Container) error {
+func (d *VersionsDB) CreateContainer(_ context.Context, container *workflow.Container) error {
 	newContainer := &containerJSON{Name: container.Name, Version: container.ImageVersion}
 	d.cfg.Containers = append(d.cfg.Containers, newContainer)
 	d.containersByName[newContainer.Name] = newContainer
@@ -128,7 +138,7 @@ func (d *VersionsDB) CreateContainer(ctx context.Context, container *workflow.Co
 	return nil
 }
 
-func (d *VersionsDB) UpdateContainer(ctx context.Context, container *workflow.Container) error {
+func (d *VersionsDB) UpdateContainer(_ context.Context, container *workflow.Container) error {
 	c := d.getContainer(container.Name)
 	if c == nil {
 		return workflow.ErrContainerNotFound
@@ -139,18 +149,22 @@ func (d *VersionsDB) UpdateContainer(ctx context.Context, container *workflow.Co
 	return nil
 }
 
-func (d *VersionsDB) Flush(ctx context.Context) error {
-	db, err := d.dbPath()
+func (d *VersionsDB) Flush(_ context.Context) error {
+	dbLocation, err := d.dbPath()
 	if err != nil {
 		return err
 	}
 
 	data, err := json.MarshalIndent(d.cfg, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("error marshaling json database: %w", err)
 	}
 
 	data = append(data, '\n')
 
-	return os.WriteFile(db, data, 0o600)
+	if err := os.WriteFile(dbLocation, data, syscall.S_IRUSR|syscall.S_IWUSR); err != nil {
+		return fmt.Errorf("error writing json database file: %w", err)
+	}
+
+	return nil
 }

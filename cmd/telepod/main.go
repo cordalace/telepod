@@ -26,16 +26,13 @@ func main() {
 	telegramBotToken := requireEnv("TELEGRAM_BOT_TOKEN")
 
 	podRuntime := podruntime.NewPodRuntime()
-	if err := podRuntime.Init(); err != nil {
-		log.Fatalf("error initializing podman runtime: %v", err)
-	}
 
 	versionsDB := versionsdb.NewVersionsDB()
 	if err := versionsDB.Init(); err != nil {
 		log.Fatalf("error initializing versions db: %v", err)
 	}
 
-	httpClient := &http.Client{}
+	httpClient := new(http.Client)
 
 	telegramNotifier := telegramnotifier.NewTelegramNotifier(httpClient, telegramChatID, telegramBotToken)
 

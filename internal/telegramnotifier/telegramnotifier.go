@@ -22,7 +22,7 @@ type TelegramNotifier struct {
 
 func (n *TelegramNotifier) CreateNotification(ctx context.Context, container *workflow.Container) error {
 	data, err := json.Marshal(struct {
-		ChatID string `json:"chat_id"`
+		ChatID string `json:"chat_id"` // //nolint:tagliatelle
 		Text   string `json:"text"`
 	}{
 		ChatID: n.chatID,

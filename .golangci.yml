@@ -1,0 +1,17 @@
+linters:
+  enable-all: true
+  disable:
+  # deprecated
+  - exhaustivestruct
+  - scopelint
+  - ifshort
+  - deadcode
+  - varcheck
+  - structcheck
+  - maligned
+  - nosnakecase
+  - golint
+  - interfacer
+
+  # annoying
+  - wsl
