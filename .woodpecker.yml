@@ -7,3 +7,10 @@ pipeline:
     image: golang:1.20
     commands:
       - go test ./...
+  release:
+    image: goreleaser/goreleaser
+    commands:
+      - goreleaser release
+    when:
+      event: tag
+      tag: v*
