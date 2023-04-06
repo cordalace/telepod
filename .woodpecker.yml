@@ -3,10 +3,20 @@ pipeline:
     image: golangci/golangci-lint
     commands:
       - golangci-lint run
+    when:
+      event:  # all events except tag
+      - push
+      - pull_request
+      - deployment
   test:
     image: golang:1.20
     commands:
       - go test ./...
+    when:
+      event:  # all events except tag
+      - push
+      - pull_request
+      - deployment
   release:
     image: goreleaser/goreleaser
     commands:
