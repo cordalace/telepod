@@ -1,0 +1,9 @@
+pipeline:
+  lint:
+    image: golangci/golangci-lint
+    commands:
+      - golangci-lint run
+  test:
+    image: golang:1.20
+    commands:
+      - go test ./...
