@@ -2,6 +2,9 @@ pipeline:
   lint:
     image: golangci/golangci-lint
     commands:
+      # https://github.com/containers/podman/issues/12548#issuecomment-989053364
+      # https://github.com/containers/podman/issues/15733#issuecomment-1242971062
+      - go build -tags "remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp" ./...
       - golangci-lint run
     when:
       event:  # all events except tag
@@ -11,7 +14,7 @@ pipeline:
   test:
     image: golang:1.20
     commands:
-      - go test ./...
+      - go test -tags "remote exclude_graphdriver_btrfs btrfs_noversion exclude_graphdriver_devicemapper containers_image_openpgp" ./...
     when:
       event:  # all events except tag
       - push

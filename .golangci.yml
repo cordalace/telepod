@@ -1,3 +1,12 @@
+run:
+  build-tags:
+  # https://github.com/containers/podman/issues/12548#issuecomment-989053364
+  # https://github.com/containers/podman/issues/15733#issuecomment-1242971062
+  - remote
+  - exclude_graphdriver_btrfs
+  - btrfs_noversion
+  - exclude_graphdriver_devicemapper
+  - containers_image_openpgp
 linters:
   enable-all: true
   disable:
@@ -15,3 +24,6 @@ linters:
 
   # annoying
   - wsl
+
+  # not interested
+  - godox
