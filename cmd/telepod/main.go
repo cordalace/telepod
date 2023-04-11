@@ -26,6 +26,9 @@ func main() {
 	telegramBotToken := requireEnv("TELEGRAM_BOT_TOKEN")
 
 	podRuntime := podruntime.NewPodRuntime()
+	if err := podRuntime.Init(); err != nil {
+		log.Fatalf("error initializing pod runtime: %v", err)
+	}
 
 	versionsDB := versionsdb.NewVersionsDB()
 	if err := versionsDB.Init(); err != nil {

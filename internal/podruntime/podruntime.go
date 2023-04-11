@@ -1,97 +1,91 @@
 package podruntime
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os/exec"
-	"strings"
+	"net/url"
+	"os"
 
 	"codeberg.org/cordalace/telepod/internal/workflow"
-)
-
-const (
-	podmanPath = "/usr/bin/podman"
+	"github.com/adrg/xdg"
+	"github.com/containers/podman/v3/pkg/bindings"
+	"github.com/containers/podman/v3/pkg/bindings/containers"
+	"github.com/containers/podman/v3/pkg/bindings/images"
 )
 
 func NewPodRuntime() *PodRuntime {
-	return &PodRuntime{}
+	return &PodRuntime{
+		conn: nil,
+	}
 }
 
-type PodRuntime struct{}
+type PodRuntime struct {
+	conn context.Context //nolint:containedctx
+}
 
-func (r *PodRuntime) ListRunningContainers(ctx context.Context) ([]*workflow.Container, error) {
-	containerNames, err := r.listContainers(ctx)
+func (r *PodRuntime) Init() error {
+	endpoint, err := getDefaultEndpoint()
+	if err != nil {
+		return err
+	}
+
+	r.conn, err = bindings.NewConnection(context.Background(), endpoint)
+	if err != nil {
+		return fmt.Errorf("error creating connection: %w", err)
+	}
+
+	return nil
+}
+
+func getDefaultEndpoint() (string, error) {
+	// The default endpoint for a rootful service is unix:///run/podman/podman.sock
+	// and rootless is unix://$XDG_RUNTIME_DIR/podman/podman.sock
+	var path string
+	var err error
+
+	if os.Geteuid() == 0 {
+		path = "/run/podman/podman.sock"
+	} else {
+		path, err = xdg.RuntimeFile("podman/podman.sock")
+		if err != nil {
+			return "", fmt.Errorf("error generating podman.sock location: %w", err)
+		}
+	}
+
+	endpointURL := url.URL{
+		Scheme:      "unix",
+		Opaque:      "",
+		User:        nil,
+		Host:        "",
+		Path:        path,
+		RawPath:     "",
+		OmitHost:    false,
+		ForceQuery:  false,
+		RawQuery:    "",
+		Fragment:    "",
+		RawFragment: "",
+	}
+
+	return endpointURL.String(), nil
+}
+
+func (r *PodRuntime) ListRunningContainers(_ context.Context) ([]*workflow.Container, error) {
+	containers, err := containers.List(r.conn, nil) //nolint:contextcheck
 	if err != nil {
 		return nil, fmt.Errorf("error listing containers: %w", err)
 	}
 
-	ret := make([]*workflow.Container, len(containerNames))
-	for idx, containerName := range containerNames {
-		imageID, err := r.getImageID(ctx, containerName)
+	ret := make([]*workflow.Container, len(containers))
+	for idx, container := range containers {
+		// TODO: pick all names
+		containerName := container.Names[0]
+		img, err := images.GetImage(r.conn, container.ImageID, nil) //nolint:contextcheck
 		if err != nil {
-			return nil, fmt.Errorf("error finding container image id: %s: %w", containerName, err)
+			return nil, fmt.Errorf("error getting container image id: %s: %w", containerName, err)
 		}
-
-		buildVersion, err := r.getBuildVersion(ctx, imageID)
-		if err != nil {
-			return nil, fmt.Errorf("error finding container image build version: %s: %w", imageID, err)
-		}
-
+		buildVersion := img.Labels["org.opencontainers.image.version"]
 		ret[idx] = &workflow.Container{Name: containerName, ImageVersion: buildVersion}
 	}
 
 	return ret, nil
-}
-
-func (r *PodRuntime) podman(ctx context.Context, cmd ...string) (string, error) {
-	c := exec.CommandContext(ctx, podmanPath, cmd...)
-	var out bytes.Buffer
-	c.Stdout = &out
-	if err := c.Run(); err != nil {
-		return "", fmt.Errorf("error running podman command: %s: %w", r.formatShell(cmd), err)
-	}
-
-	return strings.TrimSpace(out.String()), nil
-}
-
-func (r *PodRuntime) formatShell(cmd []string) string {
-	return podmanPath + " " + strings.Join(cmd, " ")
-}
-
-func (r *PodRuntime) getImageID(ctx context.Context, container string) (string, error) {
-	imageID, err := r.podman(ctx, "inspect", "--format", "{{ .Image }}", container)
-	if err != nil {
-		return "", err
-	}
-
-	return imageID, nil
-}
-
-func (r *PodRuntime) getBuildVersion(ctx context.Context, imageID string) (string, error) {
-	buildVersion, err := r.podman(
-		ctx,
-		"inspect",
-		"--format",
-		"{{index .Labels \"org.opencontainers.image.version\"}}",
-		imageID,
-	)
-	if err != nil {
-		return "", err
-	}
-
-	return buildVersion, nil
-}
-
-func (r *PodRuntime) listContainers(ctx context.Context) ([]string, error) {
-	lines, err := r.podman(ctx, "ps", "--format", "{{ .Names }}")
-	if err != nil {
-		return nil, err
-	}
-
-	if lines == "" {
-		return nil, nil
-	}
-
-	return strings.Split(lines, "\n"), nil
 }
