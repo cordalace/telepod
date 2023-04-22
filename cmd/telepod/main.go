@@ -12,6 +12,8 @@ import (
 	"codeberg.org/cordalace/telepod/internal/workflow"
 )
 
+var version = "dev"
+
 func requireEnv(name string) string {
 	value, ok := os.LookupEnv(name)
 	if !ok {
@@ -22,6 +24,8 @@ func requireEnv(name string) string {
 }
 
 func main() {
+	log.Printf("telepod %s", version)
+
 	telegramChatID := requireEnv("TELEGRAM_CHAT_ID")
 	telegramBotToken := requireEnv("TELEGRAM_BOT_TOKEN")
 
