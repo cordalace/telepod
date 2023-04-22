@@ -18,6 +18,14 @@ builds:
   - -w
   - -extldflags
   - -static
+  - -X
+  - main.version={{.Version}}
+  - -X
+  - main.commit={{.Commit}}
+  - -X
+  - main.date={{.Date}}
+  - -X
+  - main.builtBy=goreleaser
   tags:
   # https://github.com/containers/podman/issues/12548#issuecomment-989053364
   # https://github.com/containers/podman/issues/15733#issuecomment-1242971062
