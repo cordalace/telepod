@@ -61,3 +61,7 @@ Telepod tracks image versions in json-file:
 - `/var/lib/telepod/db.json` if started as root
 - `$XDG_STATE_HOME/telepod/db.json` if started as regular user
 
+## Repository mirrors
+
+This project has [Github](https://github.com/cordalace/telepod) mirror, to contribute please use
+[Codeberg](https://codeberg.org/cordalace/telepod).
