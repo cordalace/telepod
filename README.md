@@ -63,5 +63,6 @@ Telepod tracks image versions in json-file:
 
 ## Repository mirrors
 
-This project has [Github](https://github.com/cordalace/telepod) mirror, to contribute please use
+This project has [Github](https://github.com/cordalace/telepod) and
+[Gitlab](https://gitlab.com/cordalace/telepod) mirrors, to contribute please use
 [Codeberg](https://codeberg.org/cordalace/telepod).
